@@ -35,6 +35,7 @@ public class ForesterBot extends Bot {
     private boolean cutAllSprouts;
     private boolean harvesting;
     private boolean planting;
+    private boolean pruning;
     private boolean shriveledTreesChopping;
     private boolean deforesting;
     private static int toHarvest;
@@ -57,6 +58,7 @@ public class ForesterBot extends Bot {
         registerInputHandler(ForesterBot.InputKey.df, input -> toggleDeforestation());
         registerInputHandler(ForesterBot.InputKey.h, input -> toggleHarvesting());
         registerInputHandler(ForesterBot.InputKey.p, input -> togglePlanting());
+        registerInputHandler(ForesterBot.InputKey.pr, input -> togglePruning());
         registerInputHandler(ForesterBot.InputKey.scn, this::setContainerName);
         registerInputHandler(ForesterBot.InputKey.na, this::setMaxActions);
         registerInputHandler(ForesterBot.InputKey.aim, this::addItemToMove);
@@ -118,15 +120,15 @@ public class ForesterBot extends Bot {
                                     PlayerAction.HARVEST);
                             increaseHarvests(fage);
                             lastActionFinishedTime = System.currentTimeMillis();
-                        } else if (fage.getAgeName().contains("overaged")) {
-                            if (!deforesting)
-                                world.getServerConnection().sendAction(sickleId,
-                                        new long[]{Tiles.getTileId(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1], 0)},
-                                        PlayerAction.PRUNE);
-                            else
+                        } else if (fage.getAgeName().contains("overaged") && (deforesting || pruning)) {
+                            if (deforesting)
                                 world.getServerConnection().sendAction(hatchetId,
                                         new long[]{Tiles.getTileId(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1], 0)},
                                         PlayerAction.CUT_DOWN);
+                            else
+                                world.getServerConnection().sendAction(sickleId,
+                                        new long[]{Tiles.getTileId(checkedtiles[tileIndex][0], checkedtiles[tileIndex][1], 0)},
+                                        PlayerAction.PRUNE);
                             queuedTiles.add(coordsPair);
                             lastActionFinishedTime = System.currentTimeMillis();
                         } else if (fage.getAgeName().contains("sprouting") && (cutAllSprouts || fage.getAgeName().contains("very old"))) {
@@ -298,6 +300,14 @@ public class ForesterBot extends Bot {
             Utils.consolePrint("Planting is off!");
     }
 
+    private void togglePruning() {
+        pruning = !pruning;
+        if (pruning)
+            Utils.consolePrint("Pruning is on!");
+        else
+            Utils.consolePrint("Pruning is off!");
+    }
+
     private void toggleHarvesting() {
         harvesting = !harvesting;
         if (harvesting)
@@ -393,6 +403,7 @@ public class ForesterBot extends Bot {
         df("Toggle the cutting of all trees (deforestation)", ""),
         h("Toggle the harvesting", ""),
         p("Toggle the planting", ""),
+        pr("Toggle the pruning", ""),
         scn("Set the new name for containers to put sprouts/harvest", "container_name"),
         na("Set the number of actions bot will do each time", "number"),
         aim("Add new item name for moving into containers", "item_name");
